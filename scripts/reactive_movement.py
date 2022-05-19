@@ -1,12 +1,10 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import rospy
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Vector3, Twist
 from tf.transformations import euler_from_quaternion
-
-from turtlebot_audio import TurtlebotAudio
 
 import numpy as np
 import cv2
@@ -18,12 +16,11 @@ from sound_play.libsoundplay import SoundClient
 class TurtlebotController( object ):
 
   def __init__( self ):
-    self.speaker = TurtlebotAudio()
     self.bridge = CvBridge()
     self.depth_image_np = None
     self.sound_handler = SoundClient( blocking = True )
     self.odom_sub = rospy.Subscriber( '/odom', Odometry, self.odom_cb )
-    self.depth_img_sub = rospy.Subscriber( '/camera/depth/image_raw', Image , self.depth_image_cb )
+    self.depth_img_sub = rospy.Subscriber( '/camera/depth/image', Image , self.depth_image_cb )
     self.cmd_vel_pub = rospy.Publisher( '/yocs_cmd_vel_mux/input/navigation', Twist, queue_size = 10 )
 
   def odom_cb( self, msg ):
@@ -45,8 +42,8 @@ class TurtlebotController( object ):
   def obtacle_detected( self ):
     obstacle = False
     if self.depth_image_np is not None:
-      column_sample = self.depth_image_np[:,[0,320,639]]
-      column_sample = np.where( np.isnan( column_sample ), 0.0, column_sample )
+      column_sample = [self.depth_image_np[x,0:540] for x in [10,250,470]]
+      column_sample = np.where( np.isnan( column_sample ), 100.0, column_sample )
       obstacle = np.any( column_sample < 0.5 )
     return obstacle
 
@@ -56,13 +53,13 @@ class TurtlebotController( object ):
     while not rospy.is_shutdown():
       if self.obtacle_detected():
         # Rotate
-        twist = Twist( Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 0.2) )
+        twist = Twist( Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 0.5) )
         if free_space:
           free_space = False
           self.sound_handler.say( 'obstacle detected' )
       else:
         # Go forward
-        twist = Twist( Vector3(0.3, 0.0, 0.0), Vector3(0.0, 0.0, 0.0) )
+        twist = Twist( Vector3(0.1, 0.0, 0.0), Vector3(0.0, 0.0, 0.0) )
         free_space = True
       self.cmd_vel_pub.publish( twist )
 

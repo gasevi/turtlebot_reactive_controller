@@ -4,7 +4,7 @@
   <include file="$(find freenect_launch)/launch/freenect.launch" />
   <include file="$(find sound_play)/soundplay_node.launch" />
 
-  <node pkg="turtlebot_test" name="reactive_movement" type="reactive_movement.py" output="screen" />
+  <!--<node pkg="turtlebot_reactive_movement" name="reactive_movement" type="reactive_movement.py" output="screen" />-->
 
 </launch>
 
